@@ -37,6 +37,7 @@ app.init = function(){
   //     "json");
   // };
   app.server = "https://api.parse.com/1/classes/chatterbox";
+  app.mostRecentId;
 
   app.send = function(msg){
     $.ajax({
@@ -81,12 +82,39 @@ app.init = function(){
       url: app.server,
       data: "order=-createdAt",
       success: function(d){
+        // console.log(d);
+        app.mostRecentId = d.results[0].objectId;
         var d = d;
         displayMessages(d)
+        console.log(app.mostRecentId);
       },
       dataType: "json"
     })
   };
+
+  app.checkForNewMessages = function(){
+    // store previous newest id (object[objectId]);
+    // make an ajax request "GET"
+    // if the most recent message on the server matches our most recent message
+      // we don't need to do anything
+   // otherwise, splice the array from the index of the previous newest object to the end of the array
+   // call display messages on that new array or messages
+    $.ajax({
+      type: "GET",
+      url: app.server,
+      data: {
+        order: "-createdAt",
+        limit: 1
+      },
+      success: function(d){
+        if(!d.results[0].objectId === app.mostRecentId){
+          // get new messages on the server and display them
+        }
+      },
+      dataType: "json"
+    })
+  };
+
 
   var displayMessages = function (data) {
     // console.log(data.results);
@@ -95,9 +123,9 @@ app.init = function(){
       var user = JSON.stringify(escaper(data.results[i].username)) || "";
       var message = JSON.stringify(escaper(data.results[i].text)) || "";
       if (data.results[i].roomname){
-        var newDiv = '<div class="message ' + data.results[i].roomname + '">'+user+": "+message+'</div>';
+        var newDiv = '<div class="message chat ' + data.results[i].roomname + '">'+user+": "+message+'</div>';
       } else {
-        var newDiv = '<div class="message">'+user+": "+message+'</div>';
+        var newDiv = '<div class="message chat">'+user+": "+message+'</div>';
       }
       // console.log(data.results[i].roomname);
       newDiv.class = data.results[i].roomname;
@@ -111,7 +139,7 @@ app.init = function(){
 
   setInterval(function(){
     // console.log('yay');
-    // app.fetch();
+    app.fetch();
   }, 2500);
 
 
@@ -121,8 +149,6 @@ app.init = function(){
   }, 2500);
 
 };
-
-
 
 // store the id of last message on our page
 // periodically make ajax request

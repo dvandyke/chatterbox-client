@@ -1,5 +1,5 @@
 body {
-    background: #eee;
+    background: steelblue;
     text-align: center;
     padding: 0 25px;
     font-family: arial, sans-serif;
@@ -9,9 +9,10 @@ body {
     width: 500px;
     margin: auto;
     text-align: left;
-    background: white;
+    background: #eee;
     padding: 50px 60px;
     border: solid #ddd;
+    border-radius: 3px;
     border-width: 0 1px 1px 1px;
 }
 
@@ -59,7 +60,7 @@ form input[type=text] {
     padding: 5px;
 }
 
-.chat {
+#chat {
     padding: 5px;
     margin-bottom: 5px;
     background-color: #eee;
