@@ -38,14 +38,31 @@ var messageGetter = function(){
 
 var displayMessages = function (data) {
   // console.log(data.results);
+  showRooms(data);
   for(var i = 0; i<data.results.length; i++){
     var user = JSON.stringify(escaper(data.results[i].username)) || "";
     var message = JSON.stringify(escaper(data.results[i].text)) || "";
-    $(".container").prepend('<div>'+user+": "+message+'</div>');
+    if (data.results[i].roomname){
+      var newDiv = '<div class="message ' + data.results[i].roomname + '">'+user+": "+message+'</div>';
+    } else {
+      var newDiv = '<div class="message">'+user+": "+message+'</div>';
+    }
+    console.log(data.results[i].roomname);
+    newDiv.class = data.results[i].roomname;
+    $(".container").prepend(newDiv);
   }
 }
 
-setInterval(function(){console.log('yay'); messageGetter();}, 2500);
+// var userName = escaper(prompt("What is your user name?"));
+
+// var showUserName = function(){
+//   $('h1').append("<h5>" + "Username : " + userName + "</h5>");
+// }
+
+setInterval(function(){
+  // console.log('yay');
+  messageGetter();
+}, 2500);
 
 // store the id of last message on our page
 // periodically make ajax request
@@ -61,13 +78,77 @@ var postTest = function(msg){
     "json");
 };
 
-setInterval(function(){console.log('woo post test'); postTest;}, 2500);
+setInterval(function(){
+  // console.log('woo post test');
+  postTest;
+}, 2500);
 
 $(document).ready( function() {
+//  showUserName();
   $("#submission").on("click", function(){
     console.log("Button clicking")
     var message = escaper($("#messageField").val());
-    var messageObj = {text: message, userName: "LongUserName"}
+    var messageObj = {text: message, userName: userName}
     postTest(messageObj);
   });
 });
+
+var showRooms = function(data){
+  var obj = {};
+  for(var i = 0; i < data.results.length; i++){
+    if(data.results[i]["roomname"]){
+      obj[data.results[i].roomname] = data.results[i].roomname;
+    }
+  }
+  for(var key in obj){
+    //console.log(key);
+  }
+}
+
+var showThisRoom = function(room){
+  var room = escaper(room);
+
+  // debugger;
+  //var filterRoom = JSON.stringify(where={"roomname": '"' + room + '"'});
+  var filterRoom = "where="+ JSON.stringify(where={roomname: room }) + ",order=-createdAt";
+  if (!room){return false;}
+
+  $.ajax({
+    type: "GET",
+    url: "https://api.parse.com/1/classes/chatterbox",
+    data: filterRoom,
+    success: function(d){
+      var d = d;
+      displayMessages(d)
+      console.log(d);
+    },
+    dataType: "json"
+  })
+};
+
+
+
+
+
+
+
+// $.ajax({
+//     type: "GET",
+//     url: "https://api.parse.com/1/classes/chatterbox",
+//     data: 'where={"roomname":"4chan"}',
+// "where={"roomname":"4chan"}"
+// 'where={"roomname":"4chan"}'
+//     success: function(d){
+//       var d = d;
+//       displayMessages(d)
+//     },
+//     dataType: "json"
+//   })
+
+
+
+
+
+
+
+
