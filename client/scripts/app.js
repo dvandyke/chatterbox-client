@@ -37,7 +37,7 @@ app.init = function(){
   //     "json");
   // };
   app.server = "https://api.parse.com/1/classes/chatterbox";
-  app.mostRecentId;
+  app.mostRecent;
 
   app.send = function(msg){
     $.ajax({
@@ -80,36 +80,44 @@ app.init = function(){
     $.ajax({
       type: "GET",
       url: app.server,
-      data: "order=-createdAt",
+      data: {
+        order: "-createdAt",
+        // where:  where,
+        limit: 100
+      },
       success: function(d){
         // console.log(d);
-        app.mostRecentId = d.results[0].objectId;
-        var d = d;
+        var count = 0;
+        for(var i = 0; i < d.results.length; i++){
+          console.log(d.results[i].createdAt);
+          count++
+        }
+        console.log(count);
+        app.mostRecent = d.results[0].createdAt || "2015-02-17T23:31:05.340Z";
         displayMessages(d)
-        console.log(app.mostRecentId);
+        // console.log(d.results[0].createdAt);
       },
       dataType: "json"
     })
   };
 
-  app.checkForNewMessages = function(){
-    // store previous newest id (object[objectId]);
-    // make an ajax request "GET"
-    // if the most recent message on the server matches our most recent message
-      // we don't need to do anything
-   // otherwise, splice the array from the index of the previous newest object to the end of the array
-   // call display messages on that new array or messages
+  app.deliverNewMessages = function(){
+    var where = JSON.stringify({createdAt: {$gt: app.mostRecent }});
     $.ajax({
       type: "GET",
       url: app.server,
       data: {
         order: "-createdAt",
-        limit: 1
+        where:  where,
+        limit: 1000
       },
       success: function(d){
-        if(!d.results[0].objectId === app.mostRecentId){
-          // get new messages on the server and display them
-        }
+        // console.log(app.mostRecent);
+        // console.log(d.results);
+        if (d.results.length === 0){return;}
+        app.mostRecent = d.results[0]["createdAt"];
+        // console.log(d);
+        displayMessages(d);
       },
       dataType: "json"
     })
@@ -117,20 +125,21 @@ app.init = function(){
 
 
   var displayMessages = function (data) {
-    // console.log(data.results);
-    showRooms(data);
+    //showRooms(data);
     for(var i = 0; i<data.results.length; i++){
       var user = JSON.stringify(escaper(data.results[i].username)) || "";
       var message = JSON.stringify(escaper(data.results[i].text)) || "";
+      var createdAt = JSON.stringify(escaper(data.results[i].createdAt)) || "";
       if (data.results[i].roomname){
-        var newDiv = '<div class="message chat ' + data.results[i].roomname + '">'+user+": "+message+'</div>';
+        var newDiv = '<li class="message chat ' + data.results[i].roomname + '">'+user+": "+message+"  "+createdAt+'</li>';
       } else {
-        var newDiv = '<div class="message chat">'+user+": "+message+'</div>';
+        var newDiv = '<li class="message chat">'+user+": "+message+"  "+createdAt+'</li>';
       }
       // console.log(data.results[i].roomname);
       newDiv.class = data.results[i].roomname;
       $("#chats").prepend(newDiv);
     }
+    console.log('display message');
   }
 
   app.clearMessages = function(){
@@ -139,7 +148,7 @@ app.init = function(){
 
   setInterval(function(){
     // console.log('yay');
-    app.fetch();
+    app.deliverNewMessages();
   }, 2500);
 
 
@@ -147,6 +156,8 @@ app.init = function(){
     // console.log('woo post test');
     // send();
   }, 2500);
+
+app.fetch();
 
 };
 
