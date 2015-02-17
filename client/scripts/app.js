@@ -1,68 +1,128 @@
-function escapeRegExp(string){
-  return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
-};
+var app = {};
 
-var entityMap = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': '&quot;',
-  "'": '&#39;',
-  "/": '&#x2F;'
-};
+app.init = function(){
 
-function escapeHtml(string) {
-  return String(string).replace(/[&<>"'\/]/g, function (s) {
-    return entityMap[s];
-  });
-};
+  function escapeRegExp(string){
+    return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+  };
 
-var escaper = function(str){
-  if (str === undefined || str === null || typeof str === 'boolean' || typeof str === 'function'){return "";}
-  var x = escapeRegExp(str);
-  return escapeHtml(x);
-};
+  var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+  };
 
-var messageGetter = function(){
-  $.ajax({
-    type: "GET",
-    url: "https://api.parse.com/1/classes/chatterbox",
-    data: "order=-createdAt",
-    success: function(d){
-      var d = d;
-      displayMessages(d)
-    },
-    dataType: "json"
-  })
-};
+  function escapeHtml(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+      return entityMap[s];
+    });
+  };
 
-var displayMessages = function (data) {
-  // console.log(data.results);
-  showRooms(data);
-  for(var i = 0; i<data.results.length; i++){
-    var user = JSON.stringify(escaper(data.results[i].username)) || "";
-    var message = JSON.stringify(escaper(data.results[i].text)) || "";
-    if (data.results[i].roomname){
-      var newDiv = '<div class="message ' + data.results[i].roomname + '">'+user+": "+message+'</div>';
-    } else {
-      var newDiv = '<div class="message">'+user+": "+message+'</div>';
-    }
-    console.log(data.results[i].roomname);
-    newDiv.class = data.results[i].roomname;
-    $(".container").prepend(newDiv);
+  var escaper = function(str){
+    if (str === undefined || str === null || typeof str === 'boolean' || typeof str === 'function'){return "";}
+    var x = escapeRegExp(str);
+    return escapeHtml(x);
+  };
+
+  var username = escaper(prompt("What is your user name?"));
+
+  // app.send = function(msg){
+  //   $.post("https://api.parse.com/1/classes/chatterbox", JSON.stringify(msg),
+  //     function(data){
+  //       console.log("Message posted");
+  //     },
+  //     "json");
+  // };
+  app.server = "https://api.parse.com/1/classes/chatterbox";
+
+  app.send = function(msg){
+    $.ajax({
+      url: app.server,
+      type: "POST",
+      success: function(data){
+        console.log("Message posted");
+      },
+      data: JSON.stringify(msg),
+      dataType: "json"
+    })
+  };
+
+  app.addMessage = function(msg){
+    app.send(msg);
+    var newDiv = '<div class="message">'+msg[username]+": "+msg["text"]+'</div>';
+    //add class roomname (newDiv.class = .roomname;?)
+    $("#chats").prepend(newDiv);
+
   }
-}
 
-// var userName = escaper(prompt("What is your user name?"));
+  var showUserName = function(){
+    $('h1').append("<h5>" + "Username : " + username + "</h5>");
+  }
 
-// var showUserName = function(){
-//   $('h1').append("<h5>" + "Username : " + userName + "</h5>");
-// }
+  $(document).ready( function() {
+    showUserName();
+    $("#submission").on("click", function(){
+      console.log("Button clicking")
+      var message = escaper($("#messageField").val());
+      var messageObj = {text: message, username: username}
+      app.addMessage(messageObj);
+    });
+    $("#clearMessages").on("click", function(){
+      app.clearMessages();
+    })
+  });
 
-setInterval(function(){
-  // console.log('yay');
-  messageGetter();
-}, 2500);
+  app.fetch = function(){
+    $.ajax({
+      type: "GET",
+      url: app.server,
+      data: "order=-createdAt",
+      success: function(d){
+        var d = d;
+        displayMessages(d)
+      },
+      dataType: "json"
+    })
+  };
+
+  var displayMessages = function (data) {
+    // console.log(data.results);
+    showRooms(data);
+    for(var i = 0; i<data.results.length; i++){
+      var user = JSON.stringify(escaper(data.results[i].username)) || "";
+      var message = JSON.stringify(escaper(data.results[i].text)) || "";
+      if (data.results[i].roomname){
+        var newDiv = '<div class="message ' + data.results[i].roomname + '">'+user+": "+message+'</div>';
+      } else {
+        var newDiv = '<div class="message">'+user+": "+message+'</div>';
+      }
+      // console.log(data.results[i].roomname);
+      newDiv.class = data.results[i].roomname;
+      $("#chats").prepend(newDiv);
+    }
+  }
+
+  app.clearMessages = function(){
+    $('#chats').empty();
+  };
+
+  setInterval(function(){
+    // console.log('yay');
+    // app.fetch();
+  }, 2500);
+
+
+  setInterval(function(){
+    // console.log('woo post test');
+    // send();
+  }, 2500);
+
+};
+
+
 
 // store the id of last message on our page
 // periodically make ajax request
@@ -70,28 +130,7 @@ setInterval(function(){
   // if it's not the index of length - 1, then we need to add new messages
   // call display message on the index of the last messages + 1 until the newest message
   // store the id of the newest message
-var postTest = function(msg){
-  $.post("https://api.parse.com/1/classes/chatterbox", JSON.stringify(msg),
-    function(data){
-      console.log("Message posted");
-    },
-    "json");
-};
 
-setInterval(function(){
-  // console.log('woo post test');
-  postTest;
-}, 2500);
-
-$(document).ready( function() {
-//  showUserName();
-  $("#submission").on("click", function(){
-    console.log("Button clicking")
-    var message = escaper($("#messageField").val());
-    var messageObj = {text: message, userName: userName}
-    postTest(messageObj);
-  });
-});
 
 var showRooms = function(data){
   var obj = {};
@@ -128,7 +167,7 @@ var showThisRoom = function(room){
 
 
 
-
+app.init()
 
 
 
