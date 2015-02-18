@@ -102,14 +102,32 @@ app.init = function(){
       },
       success: function(d){
         // console.log(d);
+        var test = []
         for(var i = 0; i < d.results.length; i++){
-          if (app.rooms.indexOf(d.results[i].roomname) === -1) {
+          test.push(d.results[i].roomname || "none");
+          if (app.rooms.indexOf(d.results[i].roomname) < 0) {
             app.rooms.push(d.results[i].roomname)
           }
         }
+        app.rooms = _.uniq(app.rooms);
+        console.log(test);
         console.log(app.rooms);
         app.mostRecent = d.results[0].createdAt || "2015-02-17T23:31:05.340Z";
-        displayMessages(d)
+        displayMessages(d);
+
+        for(var i = 0; i < app.rooms.length; i++){
+          if (app.rooms[i] === null){
+            continue;
+          }
+          if (app.rooms[i] === undefined){
+            continue;
+          }
+          if (app.rooms[i] === ""){
+            continue;
+          }
+          $('#roomSelect').append("<option>"+app.rooms[i]+"</option>")//.text(app.rooms[i])//.text(app.rooms[i]);
+
+        }
       },
       dataType: "json"
     })
@@ -204,7 +222,9 @@ app.init = function(){
     // send();
   }, 2500);
 
-app.fetch();
+  app.fetch();
+
+
 
 };
 
