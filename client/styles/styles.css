@@ -2,7 +2,7 @@ body {
     background: steelblue;
     text-align: center;
     padding: 0 25px;
-    font-family: arial, sans-serif;
+    font-family: Lato, arial, sans-serif;
 }
 
 #main {
@@ -82,6 +82,19 @@ form input[type=text] {
 
 .spinner img {
     padding: 10px;
+}
+
+li {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px 10px;
+    margin: 5px 0;
+    background-color: #eee;
+    list-style-type: none;
+    font-family: Lato, Helvetica, Sans-Serif;
+
+
+
 }
 
 .chat {

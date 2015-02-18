@@ -38,6 +38,8 @@ app.init = function(){
   // };
   app.server = "https://api.parse.com/1/classes/chatterbox";
   app.mostRecent;
+  app.currentRoom;
+  app.rooms = [];
 
   app.send = function(msg){
     $.ajax({
@@ -52,11 +54,24 @@ app.init = function(){
   };
 
   app.addMessage = function(msg){
+    if(escaper($("#message").val()) === ""){
+      return;
+    };
+    console.log(true);
     app.send(msg);
-    var newDiv = '<div class="message">'+msg[username]+": "+msg["text"]+'</div>';
+    var user = JSON.stringify(escaper(msg.username)) || "";
+    var message = JSON.stringify(escaper(msg.text)) || "";
+    var createdAt = JSON.stringify(msg.createdAt) || "???";
+    if (msg.roomname){
+      var newLi = '<li class="message chat ' + msg.roomname + '">'+user+": "+message+"  "+createdAt+'</li>';
+    } else {
+      var newLi = '<li class="message chat">'+user+": "+message+"  "+createdAt+'</li>';
+    }
+    // console.log(data.results[i].roomname);
+    // newDiv.class = data.results[i].roomname;
+    $("#message").val("");
+    // $("#chats").prepend(newLi);
     //add class roomname (newDiv.class = .roomname;?)
-    $("#chats").prepend(newDiv);
-
   }
 
   var showUserName = function(){
@@ -65,9 +80,9 @@ app.init = function(){
 
   $(document).ready( function() {
     showUserName();
-    $("#submission").on("click", function(){
+    $("#send").on("click", function(){
       console.log("Button clicking")
-      var message = escaper($("#messageField").val());
+      var message = escaper($("#message").val());
       var messageObj = {text: message, username: username}
       app.addMessage(messageObj);
     });
@@ -87,22 +102,21 @@ app.init = function(){
       },
       success: function(d){
         // console.log(d);
-        var count = 0;
         for(var i = 0; i < d.results.length; i++){
-          console.log(d.results[i].createdAt);
-          count++
+          if (app.rooms.indexOf(d.results[i].roomname) === -1) {
+            app.rooms.push(d.results[i].roomname)
+          }
         }
-        console.log(count);
+        console.log(app.rooms);
         app.mostRecent = d.results[0].createdAt || "2015-02-17T23:31:05.340Z";
         displayMessages(d)
-        // console.log(d.results[0].createdAt);
       },
       dataType: "json"
     })
   };
 
   app.deliverNewMessages = function(){
-    var where = JSON.stringify({createdAt: {$gt: app.mostRecent }});
+    var where = JSON.stringify({createdAt: {$gt: app.mostRecent }, roomname: app.currentRoom});
     $.ajax({
       type: "GET",
       url: app.server,
@@ -114,7 +128,10 @@ app.init = function(){
       success: function(d){
         // console.log(app.mostRecent);
         // console.log(d.results);
-        if (d.results.length === 0){return;}
+        if (d.results.length === 0){
+          console.log('before')
+        return;}
+        console.log('after');
         app.mostRecent = d.results[0]["createdAt"];
         // console.log(d);
         displayMessages(d);
@@ -129,11 +146,11 @@ app.init = function(){
     for(var i = 0; i<data.results.length; i++){
       var user = JSON.stringify(escaper(data.results[i].username)) || "";
       var message = JSON.stringify(escaper(data.results[i].text)) || "";
-      var createdAt = JSON.stringify(escaper(data.results[i].createdAt)) || "";
+      var createdAt = JSON.stringify(data.results[i].createdAt) || "";
       if (data.results[i].roomname){
         var newDiv = '<li class="message chat ' + data.results[i].roomname + '">'+user+": "+message+"  "+createdAt+'</li>';
       } else {
-        var newDiv = '<li class="message chat">'+user+": "+message+"  "+createdAt+'</li>';
+        var newDiv = '<li class="message chat">'+user+": "+message+"  <span class='time'>"+createdAt+'</span></li>';
       }
       // console.log(data.results[i].roomname);
       newDiv.class = data.results[i].roomname;
@@ -146,11 +163,41 @@ app.init = function(){
     $('#chats').empty();
   };
 
+  app.showThisRoom = function(room){
+    var room = escaper(room);
+    console.log(room);
+    var filterRoom = {order: "-createdAt", where: {roomname: room}};
+    if (!room){return false;}
+
+    $.ajax({
+      type: "GET",
+      url: "https://api.parse.com/1/classes/chatterbox",
+      data: filterRoom,
+      success: function(d){
+        if(d.results.length === 0){
+          alert("Sorry, this room doesn't exist :(");
+        };
+        console.log(app.currentRoom);
+        app.currentRoom = room;
+        console.log(app.currentRoom);
+        app.clearMessages();
+        displayMessages(d)
+      },
+      dataType: "json"
+    })
+  };
+
   setInterval(function(){
     // console.log('yay');
     app.deliverNewMessages();
-  }, 2500);
+  }, 1000);
 
+// upon entering a new room, clear the previous set interval for retrieving new messages
+// reset most recent value
+// set up a new one for the new room
+
+// var refreshIntervalId = setInterval(fname, 10000);
+// clearInterval(refreshIntervalId);
 
   setInterval(function(){
     // console.log('woo post test');
@@ -181,26 +228,6 @@ var showRooms = function(data){
   }
 }
 
-var showThisRoom = function(room){
-  var room = escaper(room);
-
-  // debugger;
-  //var filterRoom = JSON.stringify(where={"roomname": '"' + room + '"'});
-  var filterRoom = "where="+ JSON.stringify(where={roomname: room }) + ",order=-createdAt";
-  if (!room){return false;}
-
-  $.ajax({
-    type: "GET",
-    url: "https://api.parse.com/1/classes/chatterbox",
-    data: filterRoom,
-    success: function(d){
-      var d = d;
-      displayMessages(d)
-      console.log(d);
-    },
-    dataType: "json"
-  })
-};
 
 
 
